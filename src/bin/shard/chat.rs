@@ -222,7 +222,6 @@ pub fn send_buddy_freechat_message(
     clients: &mut ClientMap,
     state: &mut ShardServerState,
 ) -> FFResult<()> {
-
     let client = clients.get_self();
     let pkt: sP_CL2FE_REQ_SEND_BUDDY_FREECHAT_MESSAGE =
         *client.get_packet(P_CL2FE_REQ_SEND_BUDDY_FREECHAT_MESSAGE)?;
@@ -248,24 +247,24 @@ pub fn send_buddy_freechat_message(
 
     if let Some(buddy) = state.get_player_by_uid(buddy_uid) {
         if let Some(buddy_client) = buddy.get_client(clients) {
-            buddy_client.send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &response_pkt)?;
+            buddy_client
+                .send_packet(P_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_SUCC, &response_pkt)?;
             let sender = state.get_player_by_uid(response_pkt.iFromPCUID).unwrap();
             let sender_client = sender.get_client(clients).unwrap();
-            sender_client.send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &response_pkt)?;
+            sender_client
+                .send_packet(P_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_SUCC, &response_pkt)?;
             return Ok(());
         }
     }
 
     let login_server = clients.get_login_server().unwrap();
-    let cross_shard_pkt = sP_FE2LS_REQ_BUDDY_CHAT {
-            iFromPCUID: player.get_uid(),
-            iFromPCID: pc_id,
-            iToPCUID: pkt.iBuddyPCUID,
-            szFreeChat: pkt.szFreeChat,
-            iEmoteCode: pkt.iEmoteCode,
+    let cross_shard_pkt = sP_FE2LS_REQ_SEND_BUDDY_FREECHAT {
+        iFromPCUID: player.get_uid(),
+        iToPCUID: pkt.iBuddyPCUID,
+        szFreeChat: pkt.szFreeChat,
+        iEmoteCode: pkt.iEmoteCode,
     };
-    login_server.send_packet(P_FE2LS_REQ_BUDDY_CHAT, &cross_shard_pkt)?;
-    
+    login_server.send_packet(P_FE2LS_REQ_SEND_BUDDY_FREECHAT, &cross_shard_pkt)?;
 
     Ok(())
 }
@@ -274,12 +273,13 @@ pub fn send_buddy_menuchat_message(
     clients: &mut ClientMap,
     state: &mut ShardServerState,
 ) -> FFResult<()> {
-
     let client = clients.get_self();
     let pkt: sP_CL2FE_REQ_SEND_BUDDY_MENUCHAT_MESSAGE =
         *client.get_packet(P_CL2FE_REQ_SEND_BUDDY_MENUCHAT_MESSAGE)?;
     let pc_id = client.get_player_id()?;
     let player = state.get_player(pc_id)?;
+
+    let buddy_uid = pkt.iBuddyPCUID;
 
     let msg = util::parse_utf16(&pkt.szFreeChat)?;
     if !helpers::validate_menuchat_message(&msg) {
@@ -289,24 +289,36 @@ pub fn send_buddy_menuchat_message(
         ));
     }
 
-    let pkt = sP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC {
+    let response_pkt = sP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC {
         iFromPCUID: player.get_uid(),
         iToPCUID: pkt.iBuddyPCUID,
         szFreeChat: pkt.szFreeChat,
         iEmoteCode: pkt.iEmoteCode,
     };
 
-    client.send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &pkt)?;
-
-    if let Some(buddy) = state.get_player_by_uid(pkt.iToPCUID) {
+    if let Some(buddy) = state.get_player_by_uid(buddy_uid) {
         if let Some(buddy_client) = buddy.get_client(clients) {
-            buddy_client.send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &pkt)?;
+            buddy_client
+                .send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &response_pkt)?;
+            let sender = state.get_player_by_uid(response_pkt.iFromPCUID).unwrap();
+            let sender_client = sender.get_client(clients).unwrap();
+            sender_client
+                .send_packet(P_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC, &response_pkt)?;
+            return Ok(());
         }
     }
 
+    let login_server = clients.get_login_server().unwrap();
+    let cross_shard_pkt = sP_FE2LS_REQ_SEND_BUDDY_MENUCHAT {
+        iFromPCUID: player.get_uid(),
+        iToPCUID: pkt.iBuddyPCUID,
+        szFreeChat: pkt.szFreeChat,
+        iEmoteCode: pkt.iEmoteCode,
+    };
+    login_server.send_packet(P_FE2LS_REQ_SEND_BUDDY_MENUCHAT, &cross_shard_pkt)?;
+
     Ok(())
 }
-
 
 pub fn pc_avatar_emotes_chat(
     clients: &mut ClientMap,

@@ -246,7 +246,10 @@ fn handle_packet(
         P_LS2FE_REP_PC_LOCATION_FAIL => login::login_pc_location_fail(&mut clients, state),
         P_LS2FE_REQ_PC_EXIT_DUPLICATE => login::login_pc_exit_duplicate(&mut clients, state),
         P_LS2FE_REP_GET_BUDDY_STATE => login::login_get_buddy_state(&mut clients, state),
-        P_LS2FE_REP_BUDDY_CHAT => login::login_buddy_chat(&mut clients, state),
+        P_LS2FE_REP_SEND_BUDDY_FREECHAT => login::login_buddy_freechat(&mut clients, state),
+        P_LS2FE_REP_SEND_BUDDY_FREECHAT_SUCC => login::buddy_freechat_succ(&mut clients, state),
+        P_LS2FE_REP_SEND_BUDDY_MENUCHAT => login::login_buddy_menuchat(&mut clients, state),
+        P_LS2FE_REP_SEND_BUDDY_MENUCHAT_SUCC => login::buddy_menuchat_succ(&mut clients, state),
         P_LS2FE_REP_LIVE_CHECK => Ok(()),
         //
         P_CL2LS_REQ_LOGIN => wrong_server(clients.get_self()),
@@ -314,7 +317,6 @@ fn handle_packet(
             chat::send_buddy_menuchat_message(&mut clients, state)
         }
 
-        
         //
         P_CL2FE_REQ_PC_ATTACK_NPCs => combat::pc_attack_npcs(&mut clients, state),
         //
