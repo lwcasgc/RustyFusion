@@ -6808,6 +6808,7 @@ impl FFPacket for sP_FE2LS_DISCONNECTING {}
 #[derive(Debug, Copy, Clone)]
 pub struct sP_FE2LS_REQ_BUDDY_CHAT {
     pub iFromPCUID: i64,
+    pub iFromPCID: i32,
     pub iToPCUID: i64,
     pub szFreeChat: [u16; 128],
     pub iEmoteCode: i32,
@@ -6819,6 +6820,7 @@ impl FFPacket for sP_FE2LS_REQ_BUDDY_CHAT {}
 #[derive(Debug, Copy, Clone)]
 pub struct sP_LS2FE_REP_BUDDY_CHAT {
     pub iFromPCUID: i64,
+    pub iFromPCID: i32,
     pub iToPCUID: i64,
     pub szFreeChat: [u16; 128],
     pub iEmoteCode: i32,

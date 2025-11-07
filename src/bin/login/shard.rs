@@ -416,6 +416,7 @@ pub fn buddy_chat(
     let pkt: sP_FE2LS_REQ_BUDDY_CHAT = *server.get_packet(P_FE2LS_REQ_BUDDY_CHAT)?;
     let resp = sP_LS2FE_REP_BUDDY_CHAT {
         iFromPCUID: pkt.iFromPCUID,
+        iFromPCID: pkt.iFromPCID,
         iToPCUID: pkt.iToPCUID,
         szFreeChat: pkt.szFreeChat,
         iEmoteCode: pkt.iEmoteCode,
