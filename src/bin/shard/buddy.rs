@@ -131,8 +131,26 @@ pub fn find_name_make_buddy(clients: &mut ClientMap, state: &mut ShardServerStat
     let search = PlayerSearchQuery::ByName(first_name, last_name);
     let res = search.execute(state);
     if res.is_none() {
-        // TODO cross-shard
-        return Ok(());
+        let login_server = match clients.get_login_server() {
+            Some(ls) => ls,
+            None => {
+                return Err(FFError::build(
+                    Severity::Warning,
+                    "No login server connected for cross-shard buddy warp".to_string(),
+                ));
+            }
+        };
+
+        let req_pkt = sP_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY {
+            iFromPCUID: pc_uid,
+            iFromSzFirstName: util::encode_utf16(&player.first_name).unwrap(),
+            iFromSzLastName: util::encode_utf16(&player.last_name).unwrap(),
+            iFromNameCheckFlag: player.flags.name_check as i8,
+            iBuddySzFirstName: pkt.szFirstName,
+            iBuddySzLastName: pkt.szLastName,
+        };
+
+        return login_server.send_packet(P_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY, &req_pkt);
     }
     let buddy_id = res.unwrap();
 

@@ -7,7 +7,7 @@ use rusty_fusion::{
     config::config_get,
     entity::PlayerMetadata,
     error::{
-        codes::{BuddyWarpErr, PlayerSearchReqErr},
+        codes::{BuddyReqErr, BuddyWarpErr, PlayerSearchReqErr},
         log, log_if_failed, FFError, FFResult, Severity,
     },
     monitor::{monitor_queue, monitor_update_from_packet},
@@ -687,6 +687,91 @@ pub fn buddy_warp_fail(
             .find(|c| c.get_shard_id().is_ok_and(|id| id == from_shard_id))
         {
             from_shard.send_packet(P_LS2FE_REP_BUDDY_WARP_FAIL, &resp_pkt)?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn pc_find_name_make_buddy(
+    shard_key: usize,
+    clients: &mut HashMap<usize, FFClient>,
+    state: &mut LoginServerState,
+) -> FFResult<()> {
+    let server = clients.get_mut(&shard_key).unwrap();
+    let pkt: sP_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY =
+        *server.get_packet(P_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY)?;
+
+    let buddy_first_name = util::parse_utf16(&pkt.iBuddySzFirstName)?;
+    let buddy_last_name = util::parse_utf16(&pkt.iBuddySzLastName)?;
+
+    match state.find_player_shard_by_name(&buddy_first_name, &buddy_last_name) {
+        Some((buddy_pcuid, target_shard_id)) => {
+            let buddy_shard = clients.values_mut().find(|c| match c.client_type {
+                ClientType::ShardServer(sid) => sid == target_shard_id,
+                _ => false,
+            });
+
+            let req_pkt = sP_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY {
+                iFromPCUID: pkt.iFromPCUID,
+                iBuddyPCUID: buddy_pcuid,
+                iFromNameCheckFlag: pkt.iFromNameCheckFlag,
+                iFromSzFirstName: pkt.iFromSzFirstName,
+                iFromSzLastName: pkt.iFromSzLastName,
+                iBuddySzFirstName: pkt.iBuddySzFirstName,
+                iBuddySzLastName: pkt.iBuddySzLastName,
+            };
+
+            if let Some(buddy_shard) = buddy_shard {
+                buddy_shard.send_packet(P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY, &req_pkt)?;
+            } else {
+                let rep_pkt = sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+                    iFromPCUID: pkt.iFromPCUID,
+                    iErrorCode: BuddyReqErr::CharacterDoesNotExist as i32,
+                    szFirstName: pkt.iBuddySzFirstName,
+                    szLastName: pkt.iBuddySzLastName,
+                };
+
+                let server = clients.get_mut(&shard_key).unwrap();
+                return server.send_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &rep_pkt);
+            }
+        }
+        None => {
+            let rep_pkt = sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+                iFromPCUID: pkt.iFromPCUID,
+                iErrorCode: BuddyReqErr::CharacterDoesNotExist as i32,
+                szFirstName: pkt.iBuddySzFirstName,
+                szLastName: pkt.iBuddySzLastName,
+            };
+
+            return server.send_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &rep_pkt);
+        }
+    }
+    Ok(())
+}
+
+pub fn pc_find_name_make_buddy_fail(
+    shard_key: usize,
+    clients: &mut HashMap<usize, FFClient>,
+    state: &mut LoginServerState,
+) -> FFResult<()> {
+    let server = clients.get_mut(&shard_key).unwrap();
+    let pkt: sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL =
+        *server.get_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL)?;
+
+    let resp_pkt = sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+        iFromPCUID: pkt.iFromPCUID,
+        iErrorCode: pkt.iErrorCode,
+        szFirstName: pkt.szFirstName,
+        szLastName: pkt.szLastName,
+    };
+
+    if let Some(from_shard_id) = state.get_player_shard(pkt.iFromPCUID) {
+        if let Some(from_shard) = clients
+            .values_mut()
+            .find(|c| c.get_shard_id().is_ok_and(|id| id == from_shard_id))
+        {
+            from_shard.send_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &resp_pkt)?;
         }
     }
 

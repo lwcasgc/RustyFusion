@@ -246,6 +246,23 @@ impl LoginServerState {
         None
     }
 
+    pub fn find_player_shard_by_name(
+        &self,
+        first_name: &str,
+        last_name: &str,
+    ) -> Option<(i64, i32)> {
+        let f = first_name.to_lowercase();
+        let l = last_name.to_lowercase();
+        for (shard_id, shard) in self.shards.iter() {
+            for (uid, pdata) in shard.players.iter() {
+                if pdata.first_name.to_lowercase() == f && pdata.last_name.to_lowercase() == l {
+                    return Some((*uid, *shard_id));
+                }
+            }
+        }
+        None
+    }
+
     pub fn get_all_shard_player_data<'a>(
         &'a self,
     ) -> Box<dyn Iterator<Item = &'a PlayerMetadata> + 'a> {

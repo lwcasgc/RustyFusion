@@ -253,6 +253,12 @@ fn handle_packet(
         P_LS2FE_REQ_BUDDY_WARP => login::login_buddy_warp(&mut clients, state),
         P_LS2FE_REP_BUDDY_WARP_SUCC => login::login_buddy_warp_succ(&mut clients, state),
         P_LS2FE_REP_BUDDY_WARP_FAIL => login::login_buddy_warp_fail(&mut clients, state),
+        P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL => {
+            login::login_find_name_make_buddy_fail(&mut clients, state)
+        }
+        P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY => {
+            login::login_find_name_make_buddy(&mut clients, state)
+        }
         P_LS2FE_REP_LIVE_CHECK => Ok(()),
         //
         P_CL2LS_REQ_LOGIN => wrong_server(clients.get_self()),

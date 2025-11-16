@@ -294,4 +294,13 @@ pub mod codes {
         CantWarpToLocation = 3,
         RechargeNotComplete = 6,
     }
+
+    #[repr(i32)]
+    #[derive(PartialEq, Eq, Hash, TryFromPrimitive, Clone, Copy, Debug)]
+    #[num_enum(error_type(name = FFError, constructor = FFError::from_enum_err))]
+    pub enum BuddyReqErr {
+        CharacterDoesNotExist = 1, // Message ID 143
+        BuddyListFull = 4,         // Message ID 146
+        BuddyAlreadyInList = 5,    // Message ID 104
+    }
 }

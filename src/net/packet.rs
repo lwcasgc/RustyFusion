@@ -555,6 +555,8 @@ pub enum PacketID {
     P_LS2FE_REQ_BUDDY_WARP = 0x23000012,          // 587202578
     P_LS2FE_REP_BUDDY_WARP_SUCC = 0x23000013,     // 587202579
     P_LS2FE_REP_BUDDY_WARP_FAIL = 0x23000014,     // 587202580
+    P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY = 0x23000015, // 587202581
+    P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL = 0x23000016, // 587202582
 
     P_FE2LS_REQ_CONNECT = 0x32000001,                  // 838860801
     P_FE2LS_REP_LIVE_CHECK = 0x32000002,               // 838860802
@@ -579,6 +581,8 @@ pub enum PacketID {
     P_FE2LS_REQ_BUDDY_WARP = 0x32000015,               // 838860821
     P_FE2LS_REP_BUDDY_WARP_SUCC = 0x32000016,          // 838860822
     P_FE2LS_REP_BUDDY_WARP_FAIL = 0x32000017,          // 838860823
+    P_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY = 0x32000018,  // 838860824
+    P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL = 0x32000019, // 838860825
 }
 
 pub trait FFPacket: std::fmt::Debug {}
@@ -6992,3 +6996,52 @@ pub struct sP_LS2FE_REP_BUDDY_WARP_FAIL {
     pub iErrorCode: i32,
 }
 impl FFPacket for sP_LS2FE_REP_BUDDY_WARP_FAIL {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY {
+    pub iFromPCUID: i64,
+    pub iFromSzFirstName: [u16; 9],
+    pub iFromSzLastName: [u16; 17],
+    pub iFromNameCheckFlag: i8,
+    pub iBuddySzFirstName: [u16; 9],
+    pub iBuddySzLastName: [u16; 17],
+}
+impl FFPacket for sP_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+    pub iFromPCUID: i64,
+    pub szFirstName: [u16; 9],
+    pub szLastName: [u16; 17],
+    pub iErrorCode: i32,
+}
+impl FFPacket for sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY {
+    pub iFromPCUID: i64,
+    pub iBuddyPCUID: i64,
+    pub iFromSzFirstName: [u16; 9],
+    pub iFromSzLastName: [u16; 17],
+    pub iFromNameCheckFlag: i8,
+    pub iBuddySzFirstName: [u16; 9],
+    pub iBuddySzLastName: [u16; 17],
+}
+impl FFPacket for sP_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+    pub iFromPCUID: i64,
+    pub szFirstName: [u16; 9],
+    pub szLastName: [u16; 17],
+    pub iErrorCode: i32,
+}
+impl FFPacket for sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {}

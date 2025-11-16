@@ -206,6 +206,10 @@ fn handle_packet(
         P_FE2LS_REQ_BUDDY_WARP => shard::buddy_warp(key, clients, state),
         P_FE2LS_REP_BUDDY_WARP_SUCC => shard::buddy_warp_succ(key, clients, state),
         P_FE2LS_REP_BUDDY_WARP_FAIL => shard::buddy_warp_fail(key, clients, state),
+        P_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY => shard::pc_find_name_make_buddy(key, clients, state),
+        P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL => {
+            shard::pc_find_name_make_buddy_fail(key, clients, state)
+        }
         //
         P_CL2LS_REQ_LOGIN => login::login(client, state, time),
         P_CL2LS_REQ_PC_EXIT_DUPLICATE => login::pc_exit_duplicate(key, clients, state),

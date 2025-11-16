@@ -10,7 +10,7 @@ use rusty_fusion::{
     entity::{Entity, EntityID, PlayerSearchQuery},
     enums::*,
     error::{
-        codes::{BuddyWarpErr, PlayerSearchReqErr},
+        codes::{BuddyReqErr, BuddyWarpErr, PlayerSearchReqErr},
         *,
     },
     net::{
@@ -664,4 +664,111 @@ pub fn login_buddy_warp_fail(
             ))
         },
     )
+}
+
+pub fn login_find_name_make_buddy_fail(
+    clients: &mut ClientMap,
+    state: &mut ShardServerState,
+) -> FFResult<()> {
+    catch_fail(
+        (|| {
+            let login_server = clients.get_login_server().ok_or_else(|| {
+                FFError::build(
+                    Severity::Warning,
+                    "No login server connected for find name make buddy".to_string(),
+                )
+            })?;
+            let pkt: sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL =
+                *login_server.get_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL)?;
+
+            let player_pcuid = pkt.iFromPCUID;
+
+            let deny_pkt = sP_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+                iErrorCode: pkt.iErrorCode,
+                szFirstName: pkt.szFirstName,
+                szLastName: pkt.szLastName,
+            };
+            let player = state.get_player_by_uid(player_pcuid).ok_or_else(|| {
+                FFError::build(
+                    Severity::Warning,
+                    format!("Couldn't find player with UID {}", player_pcuid),
+                )
+            })?;
+
+            let player_client = player.get_client(clients).ok_or_else(|| {
+                FFError::build(
+                    Severity::Warning,
+                    format!("Couldn't find client for player UID {}", player_pcuid),
+                )
+            })?;
+            player_client.send_packet(P_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &deny_pkt)
+        })(),
+        || {
+            Err(FFError::build(
+                Severity::Warning,
+                "Failed to process find name make buddy fail".to_string(),
+            ))
+        },
+    )
+}
+
+pub fn login_find_name_make_buddy(
+    clients: &mut ClientMap,
+    state: &mut ShardServerState,
+) -> FFResult<()> {
+    let login_server = clients.get_login_server().ok_or_else(|| {
+        FFError::build(
+            Severity::Warning,
+            "No login server connected for find name make buddy".to_string(),
+        )
+    })?;
+    let pkt: sP_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY =
+        *login_server.get_packet(P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY)?;
+
+    let player_pcuid = pkt.iFromPCUID;
+    let buddy_pcuid = pkt.iBuddyPCUID;
+
+    let buddy_id = match state.get_player_by_uid(buddy_pcuid) {
+        Some(player) => player.get_player_id(),
+        None => {
+            let deny_pkt = sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+                iFromPCUID: pkt.iFromPCUID,
+                iErrorCode: BuddyReqErr::CharacterDoesNotExist as i32,
+                szFirstName: pkt.iBuddySzFirstName,
+                szLastName: pkt.iBuddySzLastName,
+            };
+            return login_server.send_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &deny_pkt);
+        }
+    };
+
+    let buddy = state.get_player(buddy_id).unwrap();
+    if buddy.is_buddies_with(player_pcuid) {
+        let deny_pkt = sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+            iFromPCUID: pkt.iFromPCUID,
+            iErrorCode: BuddyReqErr::BuddyAlreadyInList as i32,
+            szFirstName: pkt.iBuddySzFirstName,
+            szLastName: pkt.iBuddySzLastName,
+        };
+        return login_server.send_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &deny_pkt);
+    }
+
+    if buddy.get_num_buddies() >= SIZEOF_BUDDYLIST_SLOT as usize {
+        let deny_pkt = sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+            iFromPCUID: pkt.iFromPCUID,
+            iErrorCode: BuddyReqErr::BuddyListFull as i32,
+            szFirstName: pkt.iBuddySzFirstName,
+            szLastName: pkt.iBuddySzLastName,
+        };
+        return login_server.send_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &deny_pkt);
+    }
+
+    let buddy_client = buddy.get_client(clients).unwrap();
+    let req_pkt = sP_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {
+        szFirstName: pkt.iFromSzFirstName,
+        szLastName: pkt.iFromSzLastName,
+        iPCUID: pkt.iFromPCUID,
+        iNameCheckFlag: pkt.iFromNameCheckFlag,
+    };
+
+    buddy_client.send_packet(P_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC, &req_pkt)
 }
