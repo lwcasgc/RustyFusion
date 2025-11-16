@@ -256,6 +256,9 @@ fn handle_packet(
         P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL => {
             login::login_find_name_make_buddy_fail(&mut clients, state)
         }
+        P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC => {
+            login::login_find_name_make_buddy_succ(&mut clients, state)
+        }
         P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY => {
             login::login_find_name_make_buddy(&mut clients, state)
         }

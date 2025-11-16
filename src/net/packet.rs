@@ -557,6 +557,7 @@ pub enum PacketID {
     P_LS2FE_REP_BUDDY_WARP_FAIL = 0x23000014,     // 587202580
     P_LS2FE_REQ_PC_FIND_NAME_MAKE_BUDDY = 0x23000015, // 587202581
     P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL = 0x23000016, // 587202582
+    P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC = 0x23000017, // 587202583
 
     P_FE2LS_REQ_CONNECT = 0x32000001,                  // 838860801
     P_FE2LS_REP_LIVE_CHECK = 0x32000002,               // 838860802
@@ -583,6 +584,7 @@ pub enum PacketID {
     P_FE2LS_REP_BUDDY_WARP_FAIL = 0x32000017,          // 838860823
     P_FE2LS_REQ_PC_FIND_NAME_MAKE_BUDDY = 0x32000018,  // 838860824
     P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL = 0x32000019, // 838860825
+    P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC = 0x3200001a, // 838860826
 }
 
 pub trait FFPacket: std::fmt::Debug {}
@@ -7045,3 +7047,21 @@ pub struct sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
     pub iErrorCode: i32,
 }
 impl FFPacket for sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {
+    pub iFromPCUID: i64,
+    pub iBuddyPCUID: i64,
+}
+impl FFPacket for sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {}
+
+#[repr(packed(4))]
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {
+    pub iFromPCUID: i64,
+    pub iBuddyPCUID: i64,
+}
+impl FFPacket for sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {}

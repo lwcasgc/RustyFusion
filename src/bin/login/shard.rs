@@ -777,3 +777,29 @@ pub fn pc_find_name_make_buddy_fail(
 
     Ok(())
 }
+
+pub fn pc_find_name_make_buddy_succ(
+    shard_key: usize,
+    clients: &mut HashMap<usize, FFClient>,
+    state: &mut LoginServerState,
+) -> FFResult<()> {
+    let server = clients.get_mut(&shard_key).unwrap();
+    let pkt: sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC =
+        *server.get_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC)?;
+
+    let resp_pkt = sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {
+        iFromPCUID: pkt.iFromPCUID,
+        iBuddyPCUID: pkt.iBuddyPCUID,
+    };
+
+    if let Some(from_shard_id) = state.get_player_shard(pkt.iFromPCUID) {
+        if let Some(from_shard) = clients
+            .values_mut()
+            .find(|c| c.get_shard_id().is_ok_and(|id| id == from_shard_id))
+        {
+            from_shard.send_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC, &resp_pkt)?;
+        }
+    }
+
+    Ok(())
+}

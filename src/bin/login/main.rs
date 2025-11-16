@@ -210,6 +210,9 @@ fn handle_packet(
         P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL => {
             shard::pc_find_name_make_buddy_fail(key, clients, state)
         }
+        P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC => {
+            shard::pc_find_name_make_buddy_succ(key, clients, state)
+        }
         //
         P_CL2LS_REQ_LOGIN => login::login(client, state, time),
         P_CL2LS_REQ_PC_EXIT_DUPLICATE => login::pc_exit_duplicate(key, clients, state),

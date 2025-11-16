@@ -712,6 +712,45 @@ pub fn login_find_name_make_buddy_fail(
     )
 }
 
+pub fn login_find_name_make_buddy_succ(
+    clients: &mut ClientMap,
+    state: &mut ShardServerState,
+) -> FFResult<()> {
+    catch_fail(
+        (|| {
+            let login_server = clients.get_login_server().ok_or_else(|| {
+                FFError::build(
+                    Severity::Warning,
+                    "No login server connected for find name make buddy".to_string(),
+                )
+            })?;
+            let pkt: sP_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC =
+                *login_server.get_packet(P_LS2FE_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC)?;
+
+            let player_pcuid = pkt.iFromPCUID;
+            let buddy_pcuid = pkt.iBuddyPCUID;
+
+            let player = state.get_player_by_uid(player_pcuid).ok_or_else(|| {
+                FFError::build(
+                    Severity::Warning,
+                    format!("Couldn't find player with UID {}", player_pcuid),
+                )
+            })?;
+
+            let pc_id = player.get_player_id();
+            let player = state.get_player_mut(pc_id).unwrap();
+            player.buddy_offered_to = Some(buddy_pcuid); // for validations when accepting friend request
+            Ok(()) // doesnt need to return anything because the process ends at buddy client
+        })(),
+        || {
+            Err(FFError::build(
+                Severity::Warning,
+                "Failed to process find name make buddy success".to_string(),
+            ))
+        },
+    )
+}
+
 pub fn login_find_name_make_buddy(
     clients: &mut ClientMap,
     state: &mut ShardServerState,
@@ -770,5 +809,28 @@ pub fn login_find_name_make_buddy(
         iNameCheckFlag: pkt.iFromNameCheckFlag,
     };
 
-    buddy_client.send_packet(P_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC, &req_pkt)
+    if buddy_client
+        .send_packet(P_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC, &req_pkt)
+        .is_ok()
+    {
+        let rep_pkt = sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC {
+            iFromPCUID: pkt.iFromPCUID,
+            iBuddyPCUID: pkt.iBuddyPCUID,
+        };
+
+        let login_server = clients.get_login_server().unwrap(); // unwrap because validated at start of fn
+
+        login_server.send_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC, &rep_pkt)
+    } else {
+        let deny_pkt = sP_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL {
+            iFromPCUID: pkt.iFromPCUID,
+            iErrorCode: BuddyReqErr::CharacterDoesNotExist as i32,
+            szFirstName: pkt.iBuddySzFirstName,
+            szLastName: pkt.iBuddySzLastName,
+        };
+
+        let login_server = clients.get_login_server().unwrap(); // unwrap because validated at start of fn
+
+        login_server.send_packet(P_FE2LS_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL, &deny_pkt)
+    }
 }
